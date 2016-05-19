@@ -3,38 +3,45 @@ require 'highline'
 
 
 class Nanomart
-  class NoSale < StandardError; end
-
-  def initialize(logfile, prompter)
-    @logfile, @prompter = logfile, prompter
+  class NoSale < StandardError
+    # TODO: so far, just raising a generic error - what should really happen if the sale is not approved?
   end
 
+  def initialize(prompter)
+    @prompter = prompter
+  end
+  
+  def self.logfile
+    'nanomart.log'
+  end
+  
   def sell_me(itm_type)
     itm = case itm_type
           when :beer
-            Item::Beer.new(@logfile, @prompter)
+            Item::Beer.new(@prompter)
           when :whiskey
-            Item::Whiskey.new(@logfile, @prompter)
+            Item::Whiskey.new(@prompter)
           when :cigarettes
-            Item::Cigarettes.new(@logfile, @prompter)
+            Item::Cigarettes.new(@prompter)
           when :cola
-            Item::Cola.new(@logfile, @prompter)
+            Item::Cola.new(@prompter)
           when :canned_haggis
-            Item::CannedHaggis.new(@logfile, @prompter)
+            Item::CannedHaggis.new(@prompter)
           else
             raise ArgumentError, "Don't know how to sell #{itm_type}"
           end
-
-    itm.rstrctns.each do |r|
-      itm.try_purchase(r.ck)
-    end
+    itm.rstrctns.each { |r| itm.try_purchase(r.passes?)} 
+    # imply raises an exception if any restriction fails
     itm.log_sale
   end
 end
 
 class HighlinePrompter
   def get_age
-    HighLine.new.ask('Age? ', Integer) # prompts for user's age, reads it in
+    # prompts for an customer's age from the command line, and returns it
+    # TODO: not actually being tested from the standpoint of command-line entry, does it work?
+    # TODO: what's the use case, is this the best way to implement age checking, how to use it?
+    HighLine.new.ask('Age? ', Integer)
   end
 end
 
@@ -43,76 +50,66 @@ module Restriction
   DRINKING_AGE = 21
   SMOKING_AGE = 18
 
-  class DrinkingAge
+  class BaseRestriction
     def initialize(p)
-      @prompter = p
-    end
 
-    def ck
-      age = @prompter.get_age
-      if age >= DRINKING_AGE
-        true
-      else
-        false
-      end
+      @prompter = p
+      
+    end
+    
+    def passes?
+      @prompter.get_age >= restriction_age
     end
   end
 
-  class SmokingAge
-    def initialize(p)
-      @prompter = p
-    end
-
-    def ck
-      age = @prompter.get_age
-      if age >= SMOKING_AGE
-        true
-      else
-        false
-      end
+  class DrinkingAge < BaseRestriction
+    def restriction_age
+      DRINKING_AGE
     end
   end
 
-  class SundayBlueLaw
-    def initialize(p)
-      @prompter = p
+  class SmokingAge < BaseRestriction
+    def restriction_age
+      SMOKING_AGE
     end
-
-    def ck
-      # pp Time.now.wday
-      # debugger
+  end
+  
+  class SundayBlueLaw < BaseRestriction
+    def passes?
       Time.now.wday != 0      # 0 is Sunday
     end
   end
 end
 
 class Item
-  INVENTORY_LOG = 'inventory.log'
+  # INVENTORY_LOG = 'inventory.log' #<--- TODO: this constant wasn't in use -- what's the intention
+  # TODO: I'd suggest that the implementation of this class could be cleaner and clearer
+  # without passing around a prompter, but it's a fairly major refactor so needs to be thought through
 
-  def initialize(logfile, prompter)
-    @logfile, @prompter = logfile, prompter
+  def initialize(prompter)
+    @prompter = prompter
   end
 
   def log_sale
-    File.open(@logfile, 'a') do |f|
-      f.write(nam.to_s + "\n")
+    # log each sale to a file; so far, is only logging the name of the item sold, and not even checking if a sale occurred
+    # this appears to be a stub, unsure what the original intention was (seemed to write to /dev/null)
+    # in effect, the logging was only discarding what it was appearing to write, so let's turn if off for now
+    
+    # until we have better specs for what it's supposed to do:
+    return nil #TODO: temp
+    File.open(Nanomart.logfile) do |f|
+      f.write(self.name + "\n")
     end
   end
 
-  def nam
-    class_string = self.class.to_s
-    short_class_string = class_string.sub(/^Item::/, '')
-    lower_class_string = short_class_string.downcase
-    class_sym = lower_class_string.to_sym
-    class_sym
+  def name
+    # returns the Item's for logging; was standardized as underscored symbol (TODO: was that correct?)
+    # self.class.name.demodulize.underscore.to_sym
+    self.class.name.demodulize.titleize
   end
 
   def try_purchase(success)
-    if success
-      return true
-    else
-      raise Nanomart::NoSale
-    end
+    success ||  raise( Nanomart::NoSale)
   end
 
   class Beer < Item
@@ -122,14 +119,13 @@ class Item
   end
 
   class Whiskey < Item
-    # you can't sell hard liquor on Sundays for some reason
+    # No Hard Liquor sales allowed on Sundays
     def rstrctns
       [Restriction::DrinkingAge.new(@prompter), Restriction::SundayBlueLaw.new(@prompter)]
     end
   end
 
   class Cigarettes < Item
-    # you have to be of a certain age to buy tobacco
     def rstrctns
       [Restriction::SmokingAge.new(@prompter)]
     end
@@ -137,13 +133,14 @@ class Item
 
   class Cola < Item
     def rstrctns
-      []
+      [] # Anyone can buy. Can you imagine?
     end
   end
 
   class CannedHaggis < Item
-    # the common-case implementation of Item.nam doesn't work here
-    def nam
+    # the common-case implementation of Item.name doesn't work here
+    # TBD: clarify this comment
+    def name
       :canned_haggis
     end
 

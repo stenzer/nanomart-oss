@@ -18,7 +18,7 @@ end
 describe "making sure the customer is old enough" do
   context "when you're a kid" do
     before(:each) do
-      @nanomart = Nanomart.new('/dev/null', Age9.new)
+      @nanomart = Nanomart.new( Age9.new)
     end
 
     it "lets you buy cola and canned haggis" do
@@ -35,7 +35,7 @@ describe "making sure the customer is old enough" do
 
   context "when you're a newly-minted adult" do
     before(:each) do
-      @nanomart = Nanomart.new('/dev/null', Age19.new)
+      @nanomart = Nanomart.new( Age19.new)
     end
 
     it "lets you buy cola, canned haggis, and cigarettes (to hide the taste of the haggis)" do
@@ -52,7 +52,7 @@ describe "making sure the customer is old enough" do
 
   context "when you're an old fogey on Thursday" do
     before(:each) do
-      @nanomart = Nanomart.new('/dev/null', Age99.new)
+      @nanomart = Nanomart.new( Age99.new)
       allow(Time).to receive(:now).and_return(Time.local(2010, 8, 12, 12))  # Thursday Aug 12 2010 12:00
     end
 
@@ -67,7 +67,7 @@ describe "making sure the customer is old enough" do
 
   context "when you're an old fogey on Sunday" do
     before(:each) do
-      @nanomart = Nanomart.new('/dev/null', Age99.new)
+      @nanomart = Nanomart.new( Age99.new)
       allow(Time).to receive(:now).and_return(Time.local(2010, 8, 15, 12))  # Sunday Aug 15 2010 12:00
     end
 

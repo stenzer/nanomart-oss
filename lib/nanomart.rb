@@ -31,7 +31,7 @@ class Nanomart
             raise ArgumentError, "Don't know how to sell #{itm_type}"
           end
     itm.rstrctns.each { |r| itm.try_purchase(r.passes?)} 
-    # imply raises an exception if any restriction fails
+    # Simply raises an exception if any restriction fails
     itm.log_sale
   end
 end
@@ -40,7 +40,7 @@ class HighlinePrompter
   def get_age
     # prompts for an customer's age from the command line, and returns it
     # TODO: not actually being tested from the standpoint of command-line entry, does it work?
-    # TODO: what's the use case, is this the best way to implement age checking, how to use it?
+    # TODO: let's discuss context: what's the use case, is this the best way to implement age checking, how we plan to use it?
     HighLine.new.ask('Age? ', Integer)
   end
 end
@@ -48,13 +48,11 @@ end
 
 module Restriction
   DRINKING_AGE = 21
-  SMOKING_AGE = 18
+  SMOKING_AGE  = 18
 
   class BaseRestriction
     def initialize(p)
-
       @prompter = p
-      
     end
     
     def passes?
@@ -95,17 +93,14 @@ class Item
     # this appears to be a stub, unsure what the original intention was (seemed to write to /dev/null)
     # in effect, the logging was only discarding what it was appearing to write, so let's turn if off for now
     
-    # until we have better specs for what it's supposed to do:
-    return nil #TODO: temp
-    File.open(Nanomart.logfile) do |f|
+    File.open(Nanomart.logfile,'a') do |f|
       f.write(self.name + "\n")
     end
   end
 
   def name
-    # returns the Item's for logging; was standardized as underscored symbol (TODO: was that correct?)
-    # self.class.name.demodulize.underscore.to_sym
-    self.class.name.demodulize.titleize
+    # returns the Item's name for logging, underscored
+    self.class.name.split(':').last.downcase
   end
 
   def try_purchase(success)
@@ -138,12 +133,6 @@ class Item
   end
 
   class CannedHaggis < Item
-    # the common-case implementation of Item.name doesn't work here
-    # TBD: clarify this comment
-    def name
-      :canned_haggis
-    end
-
     def rstrctns
       []
     end

@@ -15,24 +15,14 @@ class Nanomart
     'inventory.log'
   end
   
-  def sell_me(itm_type)
-    itm = case itm_type
-          when :beer
-            Item::Beer.new(@prompter)
-          when :whiskey
-            Item::Whiskey.new(@prompter)
-          when :cigarettes
-            Item::Cigarettes.new(@prompter)
-          when :cola
-            Item::Cola.new(@prompter)
-          when :canned_haggis
-            Item::CannedHaggis.new(@prompter)
-          else
-            raise ArgumentError, "Don't know how to sell #{itm_type}"
-          end
-    itm.restrictions.each { |r| itm.try_purchase(r.passes?)} 
-    # Simply raises an exception if any restriction fails
-    itm.log_sale
+  def sell_me(item_type)
+    begin
+      item =   Item.const_get(item_type.to_s.split('_').collect{|w|w.capitalize}.join).new(@prompter) #instantiate a CannedHaggis, for example, if :canned_haggis is passed
+    rescue
+      raise ArgumentError, "Unexpected error: Don't know how to sell #{item_type}"
+    end
+    item.restrictions.each { |r| item.try_purchase(r.passes?)} 
+    item.log_sale
   end
 end
 
@@ -46,6 +36,38 @@ class HighlinePrompter
   end
 end
 
+class String
+  def underscore
+    self.to_s.tr("-", "_").downcase
+  end
+end
+
+
+class Item
+  # TODO: the implementation of this class could be cleaner and clearer
+  # without passing around a prompter, but it's a fairly major refactor, let's think it through
+
+  def initialize(prompter)
+    @prompter = prompter
+  end
+  
+  def restrictions
+    [] # By default, anyone can buy
+  end
+  
+  def log_sale
+    # Append item name for each verified age-check to the log TODO: what else?
+    File.open(Nanomart.inventory_log,'a') { | log | log.write("#{name}\n") }
+  end
+
+  def name
+    self.class.name.underscore  # my class name, underscored, standardized for logging
+  end
+
+  def try_purchase(success)
+    success ||  raise( Nanomart::NoSale)
+  end
+end
 
 module Restriction
   DRINKING_AGE = 21
@@ -59,7 +81,10 @@ module Restriction
     def passes?
       @prompter.get_age >= minimum_age
     end
+    
   end
+  
+  # ==================== Restriction Subclasses =================
 
   class DrinkingAge < BaseRestriction
     def minimum_age; DRINKING_AGE; end
@@ -71,38 +96,14 @@ module Restriction
   
   class SundayBlueLaw < BaseRestriction
     def passes?
-      # Indicates no hard liquor sales allowed on Sundays (wday value for Sunday is 0)
+      # Indicates no hard liquor sales allowed on Sundays (weekday value for Sunday is 0)
       Time.now.wday != 0  
     end
   end
 end
 
-class Item
-  # TODO: the implementation of this class could be cleaner and clearer
-  # without passing around a prompter, but it's a fairly major refactor, let's think it through
+ # ==================== Item Subclasses =================
 
-  def initialize(prompter)
-    @prompter = prompter
-  end
-  
-  def log_sale
-    # Append item name for each verified age-check to a file - in use?
-    # so far, is only logging the name of the item checked, if the check passed
-    
-    # TODO: let's discuss use case this would seem to be a stub, originally wrote to /dev/null,
-    # Previously, the logging was only discarding what it appeared to be intending to write
-    
-    File.open(Nanomart.inventory_log,'a') { | log | log.write("#{name}\n") }
-  end
-
-  def name
-    # returns the Item's name for logging, underscored
-    self.class.name.split(':').last.downcase
-  end
-
-  def try_purchase(success)
-    success ||  raise( Nanomart::NoSale)
-  end
 
   class Beer < Item
     def restrictions
@@ -123,20 +124,8 @@ class Item
   end
 
   class Cola < Item
-    def restrictions
-      [] # Anyone can buy. Can you imagine?
-    end
   end
 
   class CannedHaggis < Item
-    def restrictions
-      []
-    end
- 
-    def name
-      # TODO: rethink this, prevents the underscore from disappearing in the name
-      'canned_haggis'
-    end
   end
-end
 

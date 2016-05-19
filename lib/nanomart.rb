@@ -38,7 +38,7 @@ end
 
 class String
   def underscore
-    self.to_s.tr("-", "_").downcase
+    self.gsub(/([a-z\d])([A-Z])/,'\1_\2').tr("-", "_").downcase
   end
 end
 

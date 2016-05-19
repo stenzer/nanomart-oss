@@ -1,9 +1,11 @@
-This code is terrible. 
+This code is in pretty rough shape! However, as it's a programming exercise, that's how we like it. 
 
-Clean it up. Enjoy!
+Clean it up. Enjoy! This is a work in progress.
 
 Install dependencies with @bundle@
 
 Run the tests with @bundle exec rake@
 
 View the inventory log with @cat inventory.log@
+
+To find open questions, suggestions, items up for discussion (and the like) search codebase for @TODO:@

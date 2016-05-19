@@ -6,3 +6,4 @@ Install dependencies with @bundle@
 
 Run the tests with @bundle exec rake@
 
+View the inventory log with @cat inventory.log@

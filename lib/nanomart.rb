@@ -11,8 +11,8 @@ class Nanomart
     @prompter = prompter
   end
   
-  def self.logfile
-    'nanomart.log'
+  def self.inventory_log
+    'inventory.log'
   end
   
   def sell_me(itm_type)
@@ -61,41 +61,37 @@ module Restriction
   end
 
   class DrinkingAge < BaseRestriction
-    def restriction_age
-      DRINKING_AGE
-    end
+    def restriction_age; DRINKING_AGE; end
   end
 
   class SmokingAge < BaseRestriction
-    def restriction_age
-      SMOKING_AGE
-    end
+    def restriction_age; SMOKING_AGE; end
   end
   
   class SundayBlueLaw < BaseRestriction
     def passes?
-      Time.now.wday != 0      # 0 is Sunday
+      # return false if today is Sunday
+      Time.now.wday != 0  
     end
   end
 end
 
 class Item
-  # INVENTORY_LOG = 'inventory.log' #<--- TODO: this constant wasn't in use -- what's the intention
-  # TODO: I'd suggest that the implementation of this class could be cleaner and clearer
-  # without passing around a prompter, but it's a fairly major refactor so needs to be thought through
+  # TODO: the implementation of this class could be cleaner and clearer
+  # without passing around a prompter, but it's a fairly major refactor, let's think it through
 
   def initialize(prompter)
     @prompter = prompter
   end
 
   def log_sale
-    # log each sale to a file; so far, is only logging the name of the item sold, and not even checking if a sale occurred
-    # this appears to be a stub, unsure what the original intention was (seemed to write to /dev/null)
-    # in effect, the logging was only discarding what it was appearing to write, so let's turn if off for now
+    # Append item name for each verified age-check to a file - in use?
+    # so far, is only logging the name of the item checked, if the check passed
     
-    File.open(Nanomart.logfile,'a') do |f|
-      f.write(self.name + "\n")
-    end
+    # TODO: let's discuss use case this would seem to be a stub, originally wrote to /dev/null,
+    # Previously, the logging was only discarding what it appeared to be intending to write
+    
+    File.open(Nanomart.inventory_log,'a') { | log | log.write("#{name}\n") }
   end
 
   def name
@@ -135,6 +131,11 @@ class Item
   class CannedHaggis < Item
     def rstrctns
       []
+    end
+ 
+    def name
+      # TODO: rethink this, prevents the underscore from disappearing in the name
+      'canned_haggis'
     end
   end
 end

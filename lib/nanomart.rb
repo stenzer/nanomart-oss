@@ -30,7 +30,7 @@ class Nanomart
           else
             raise ArgumentError, "Don't know how to sell #{itm_type}"
           end
-    itm.rstrctns.each { |r| itm.try_purchase(r.passes?)} 
+    itm.restrictions.each { |r| itm.try_purchase(r.passes?)} 
     # Simply raises an exception if any restriction fails
     itm.log_sale
   end
@@ -41,6 +41,7 @@ class HighlinePrompter
     # prompts for an customer's age from the command line, and returns it
     # TODO: not actually being tested from the standpoint of command-line entry, does it work?
     # TODO: let's discuss context: what's the use case, is this the best way to implement age checking, how we plan to use it?
+    # TODO: we're also not keeping the age around at all, will we ever need it?
     HighLine.new.ask('Age? ', Integer)
   end
 end
@@ -56,21 +57,21 @@ module Restriction
     end
     
     def passes?
-      @prompter.get_age >= restriction_age
+      @prompter.get_age >= minimum_age
     end
   end
 
   class DrinkingAge < BaseRestriction
-    def restriction_age; DRINKING_AGE; end
+    def minimum_age; DRINKING_AGE; end
   end
 
   class SmokingAge < BaseRestriction
-    def restriction_age; SMOKING_AGE; end
+    def minimum_age; SMOKING_AGE; end
   end
   
   class SundayBlueLaw < BaseRestriction
     def passes?
-      # return false if today is Sunday
+      # Indicates no hard liquor sales allowed on Sundays (wday value for Sunday is 0)
       Time.now.wday != 0  
     end
   end
@@ -83,7 +84,7 @@ class Item
   def initialize(prompter)
     @prompter = prompter
   end
-
+  
   def log_sale
     # Append item name for each verified age-check to a file - in use?
     # so far, is only logging the name of the item checked, if the check passed
@@ -104,32 +105,31 @@ class Item
   end
 
   class Beer < Item
-    def rstrctns
+    def restrictions
       [Restriction::DrinkingAge.new(@prompter)]
     end
   end
 
   class Whiskey < Item
-    # No Hard Liquor sales allowed on Sundays
-    def rstrctns
+    def restrictions
       [Restriction::DrinkingAge.new(@prompter), Restriction::SundayBlueLaw.new(@prompter)]
     end
   end
 
   class Cigarettes < Item
-    def rstrctns
+    def restrictions
       [Restriction::SmokingAge.new(@prompter)]
     end
   end
 
   class Cola < Item
-    def rstrctns
+    def restrictions
       [] # Anyone can buy. Can you imagine?
     end
   end
 
   class CannedHaggis < Item
-    def rstrctns
+    def restrictions
       []
     end
  

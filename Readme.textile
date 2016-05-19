@@ -4,8 +4,6 @@ Clean it up. Enjoy! This is a work in progress.
 
 Install dependencies with @bundle@
 
-Run the tests with @bundle exec rake@
-
-View the inventory log with @cat inventory.log@
+To run the tests and view the log: @rm inventory.log && bundle exec rake && cat inventory.log@
 
 To find open questions, suggestions, items up for discussion (and the like) search codebase for @TODO:@

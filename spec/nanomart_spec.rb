@@ -4,15 +4,21 @@ require 'nanomart'
 
 
 class Age9
-  def get_age() 9 end
+  def get_age
+    9 
+  end
 end
 
 class Age19
-  def get_age() 19 end
+  def get_age
+    19 
+  end
 end
 
 class Age99
-  def get_age() 99 end
+  def get_age
+    99 
+  end
 end
 
 describe "making sure the customer is old enough" do
